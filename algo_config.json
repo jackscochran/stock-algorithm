@@ -1,0 +1,12 @@
+{
+    "start_date": "2011-01",
+    "end_date": "2021-08",
+    "algorithm": "connorPOC",
+    "version": 1,
+    "output_type": "n/a",
+    "holding_period": 12,
+    "training_set_id": "n/a",
+    "training_look_back": "n/a",
+    "trade_load": 1,
+    "trade_period": 1 
+}
