@@ -17,7 +17,7 @@ def load_features():
     from_set = 1
     prev_evaluator = training_data_adaptor.get_training_set(from_set)
 
-    for point in training_data_adaptor.get_entire_set(from_set):
+    for point in training_data_adaptor.get_training_points(from_set):
         print(point.date)
         features = {}
         for i in range(len(prev_evaluator.feature_labels)):

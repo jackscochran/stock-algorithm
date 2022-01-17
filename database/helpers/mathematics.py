@@ -9,7 +9,7 @@ def divide(num,dom):
     
     return num/dom
 
-def normalize(dict):
+def normalize_to_percent(dict):
     total = sum(dict.values())
                 
     normalized_dict = {}
@@ -19,4 +19,13 @@ def normalize(dict):
         normalized_dict[feature] = dict[feature] / total
         
     return normalized_dict
+
+def normalize_features(features, means, stdevs):
+
+    for i in range(features.shape[0]):
+        for j in range(features.shape[1]):
+            features[i][j] = (features[i][j] - means[j]) / stdevs[j]
+
+    return features
+
 

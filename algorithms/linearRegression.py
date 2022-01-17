@@ -1,6 +1,8 @@
 import numpy as np
 from sklearn.linear_model import LinearRegression
 
+NAME = 'LinReg'
+
 def train(X, y):
 
     model = LinearRegression().fit(X, y)

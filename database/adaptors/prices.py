@@ -36,6 +36,16 @@ def add_monthly_price(ticker, date, value):
 
     return price
 
+def price_monthly_range(ticker, start, end):
+
+    data = prices.MonthlyPrice.objects(
+        ticker=ticker,
+        date__gte=start,
+        date__lte=end
+    ).order_by('date')
+
+    return data
+
 def get_random_prices(date, n):
     samples = list(prices.MonthlyPrice.objects(date=date))   
     indices = []
@@ -49,9 +59,10 @@ def get_random_prices(date, n):
 
     return selection
 
-def get_performance(ticker, date, holding_period):
+def get_performance(ticker, date, period):
+
     start_price = get_monthly_price(ticker, date)
-    end_price = get_monthly_price(ticker, time.get_months_ahead(date, holding_period))
+    end_price = get_monthly_price(ticker, time.get_months_ahead(date, period))
 
     if start_price is not None and end_price is not None:
         return math_helper.divide(end_price.value, start_price.value)

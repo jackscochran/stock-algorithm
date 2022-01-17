@@ -4,7 +4,7 @@ def get_evaluator(key):
     return evaluators.Evaluator.objects(key=key).first()
 
 def get_key(config):
-    return f'{config["algorithm"]}-{config["version"]}'
+    return f'{config["name"]}-{config["version"]}'
 
 def add_evaluator(config):
     key = get_key(config)
