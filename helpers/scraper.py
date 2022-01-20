@@ -11,7 +11,9 @@ def get_price(ticker, date):
     return price
 
 def get_monthly_prices(ticker):
-
-    return yf_stock_info.get_data(ticker, interval='1mo')['close']
+    try:
+        return yf_stock_info.get_data(ticker, interval='1mo')['close']
+    except:
+        return None
     
 

@@ -10,12 +10,12 @@ if __name__ == '__main__':
     # load algorithm configurations #
     config = {
         "algorithm": "RandomForestRegressor-1",
-        "start_date": "2014-01",
-        "end_date": "2020-07",
+        "start_date": "1996-01",
+        "end_date": "2020-12",
         "holding_period": 12,
-        "trade_load": 9,
+        "trade_load": 2,
         "trade_period": 1,  
-        "lookback": 1
+        "lookback": 0
     }
 
 

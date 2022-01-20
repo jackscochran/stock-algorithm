@@ -23,17 +23,33 @@ if __name__=="__main__":
 
     config = {
         "version": 1,
-        "train_start": "2014-01",
-        "train_end": "2020-08",
-        "training_set_id": 2, 
+        "train_start": "2005-01",
+        "train_end": "2020-12",
+        "training_set_id": 1, 
         "training_timestamp": 1,
-        "training_lookback": 48
+        "training_lookback": 240,
+        "string_filter": {
+            "symbol": ['aapl'],
+            "currency": [],
+            "industry": [],
+            "exchangeShortName": [],
+            "ceo": [],
+            "sector": [],
+            "country": [],
+        },
+        "float_filter": {
+            #         [min, max]
+            "price": [None, None], 
+            "beta": [None, None], 
+            "mktCap": [None, None],
+            "fullTimeEmployees": [None, None]
+        }
     }
 
     algorithm = randomForest
-
-    config['holding_period'] = training_data_adaptor.get_prediction_period(config['training_set_id'])
-    config['output_type'] = training_data_adaptor.get_target_type(config['training_set_id'])
+    training_set = training_data_adaptor.get_training_set(config['training_set_id'])
+    config['holding_period'] = training_set.config['prediction_period']
+    config['output_type'] = training_set.target_type
     config['name'] = algorithm.NAME
 
 # -------------- Save evaluator information to database if not there ------------
@@ -59,7 +75,9 @@ if __name__=="__main__":
         X, y = training_data_adaptor.get_training_data(
             evaluator.config['training_set_id'], 
             training_start, 
-            training_stop
+            training_stop,
+            config['string_filter'],
+            config['float_filter']
             )
 
         # normalize data
@@ -95,13 +113,6 @@ if __name__=="__main__":
             )
 
         current_date = time.get_months_ahead(current_date, config['training_timestamp'])
-
-
-# ---------------------- TEST PREDICTIONS ---------------------- #
-
-# metrics = algorithm.test_evaluations(config['name'])
-
-# ---------------------- VISUALIZE RESULTS --------------------- #     
 
 
 

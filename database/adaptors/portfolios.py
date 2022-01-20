@@ -70,7 +70,10 @@ def sp500_balances(start_date, end_date, period):
         if previous_date is None:
             balances[current_date] = 1
         else:
-            balances[current_date] = balances[previous_date] / price_adaptor.get_performance('spy', current_date, -period)
+            performance = price_adaptor.get_performance('spy', current_date, -period)
+            if performance is None:
+                performance = 1
+            balances[current_date] = balances[previous_date] / performance
 
         previous_date = current_date
         current_date = time.get_months_ahead(current_date, period)
@@ -111,8 +114,8 @@ def load_portfolio(data, config):
     return portfolio
 
 def add_portfolio(config, trades):
-
-    balances = calculate_balances(trades, config)
+    csv_name = 'RandomForest-1'
+    balances = calculate_balances(trades, config, csv_name=csv_name)
     metrics = calculate_metrics(balances, calculate_returns(sp500_balances(config['start_date'],config['end_date'], config['trade_period'])))
 
     portfolio = portfolios.Portfolio(
@@ -239,8 +242,8 @@ def calculate_balances(trades, config, csv_name=None):
            
 
         # check if any trades are made on current date
-        if current_date not in trades.keys(): # no trades make
-            current_date = time.get_months_ahead(current_date, config['period'])
+        if current_date not in trades.keys() or trades[current_date] is None: # no trades make
+            current_date = time.get_months_ahead(current_date, config['holding_period'])
             continue
 
         # make trades and redistribute

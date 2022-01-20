@@ -13,10 +13,15 @@ def plot_against(series_dict, legend_title=None, title=None):
         plt.legend(title=legend_title)
     if title:
         plt.title(title)
+
+    # plt.gca().set_ylim([0.5, 2])
+
     plt.show()
 
-def hist(series):
-    series.hist()
+def hist(series, title=None):
+    series.hist(bins=30)
+    if title:
+        plt.title(title)
     plt.show()
 
 def scatter(x, y):

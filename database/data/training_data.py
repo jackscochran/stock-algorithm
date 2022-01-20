@@ -4,7 +4,7 @@ class TrainingSet(mongoengine.Document):
     idenifier = mongoengine.IntField(required=True, unique=True)
     feature_labels = mongoengine.ListField()
     target_type = mongoengine.StringField()
-    prediction_period = mongoengine.IntField()
+    config = mongoengine.DictField()
     meta = {
         'db_alias': 'core',
         'collection': 'training_sets'

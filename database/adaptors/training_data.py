@@ -1,5 +1,5 @@
 from ..data import training_data
-from ..adaptors import prices as price_adaptor
+from ..adaptors import companies as company_adaptor
 import numpy as np
 
 def get_training_point(identifier, ticker, date):
@@ -19,10 +19,9 @@ def get_prediction_period(idenifier):
 
     return training_set.prediction_period
 
-def add_training_set(identifier, features, prediction_period, target_type):
-    training_set = training_data.TrainingSet(idenifier=identifier, feature_labels=features, prediction_period=prediction_period, target_type=target_type)
+def add_training_set(identifier, features, target_type, config):
+    training_set = training_data.TrainingSet(idenifier=identifier, feature_labels=features, config=config, target_type=target_type)
     training_set.save()
-
     return training_set
 
 def add_training_point(id, ticker, date, features, target, is_clean):
@@ -43,7 +42,7 @@ def add_training_point(id, ticker, date, features, target, is_clean):
 
     return training_point
     
-def get_training_data(id, start_date, end_date):
+def get_training_data(id, start_date, end_date, string_filters, float_filters):
     
 
     training_rows = training_data.TrainingPoint.objects(
@@ -57,9 +56,25 @@ def get_training_data(id, start_date, end_date):
     y = []
  
     for row in training_rows:
+
+         # Apply Filters
+        # profile = company_adaptor.get_company(row.ticker).profile
+        # is_match = True 
+        # for filter in string_filters:
+        #     if len(string_filters[filter]) == 0:
+        #         continue
+        #     is_match = is_match and (profile[filter] in string_filters[filter])
+        # for filter in float_filters:
+        #     if len(float_filters[filter]) == 0:
+        #         continue
+        #     is_match = is_match and (profile[filter] in float_filters[filter])
+
+
+        # save training data
+        # if is_match:
         x.append(row.feature_values)
         y.append(row.target)
-            
+        
     x = np.array(x)
     y = np.array(y)
     

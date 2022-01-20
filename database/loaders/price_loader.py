@@ -1,19 +1,19 @@
 from database.adaptors import prices as price_adaptor
 from database.adaptors import companies as company_adaptor
 from database import manager
-from helpers import scraper, time
+from helpers import scraper, time, fmp_adaptor
 import math
 
 manager.setup_connection()
-tickers = ['spy'] #company_adaptor.get_all_tickers()
+tickers = fmp_adaptor.get_all_tickers_wth_financials()
 
 count = 0
 error_count = 0
-min = 0
+min = 12088
 total = len(tickers)
 
-start_date = '2011-01'
-end_date = '2021-12'
+start_date = '1970-01'
+end_date = '2011-01'
 
 for ticker in tickers:
     print('\n----------')
@@ -23,6 +23,9 @@ for ticker in tickers:
     if count < min:
         continue
     
+    if price_adaptor.get_monthly_price(ticker, start_date) is not None:
+        continue
+
     prices = scraper.get_monthly_prices(ticker)
     if prices is None:
         error_count += 1

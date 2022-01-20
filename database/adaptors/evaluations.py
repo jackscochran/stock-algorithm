@@ -3,18 +3,44 @@ from ..data import evaluations
 from ..data import companies
 from ..adaptors import prices as price_adaptor
 from ..adaptors import evaluators as evaluator_adaptor 
+from ..adaptors import training_data as training_data_adaptor 
 from ..helpers import time
 from ..helpers import visualization as viz
 import math
+import statistics
 import heapq
 
 import pandas as pd
 
 def test_evaluations(evaluator):
+    residuals = []
+    square_r = []
+    absolute_r = []
 
-    evaluator = evaluator_adaptor.get_evaluator(evaluator.key)
-    testing_set = evaluations.Evaluation.objects(evaluator_name=evaluator.key)
-    
+    for eval in get_all_evaluations(evaluator.key):
+        current_date = time.get_months_ahead(eval.date, evaluator.config['holding_period'])
+        training_node = training_data_adaptor.get_training_point(
+            evaluator.config['training_set_id'],
+            eval.ticker,
+            current_date
+        )
+
+        if training_node is not None:
+            residual = eval.value-training_node.target
+            residuals.append(residual)
+            square_r.append(residual * residual)
+            absolute_r.append(max(residual, -residual))
+
+    print(f'Root Mean Square Error: {math.sqrt(statistics.mean(square_r))}')
+    print(f'Average R2: {statistics.mean(square_r)}')
+    print(f'Median R2: {statistics.median(square_r)}')
+    print(f'STDev R2: {statistics.stdev(square_r)}')
+
+    print(f'Average Absoulte R: {statistics.mean(absolute_r)}')
+    print(f'Median Absoulte R: {statistics.median(absolute_r)}')
+    print(f'STDev Absoulte R: {statistics.stdev(absolute_r)}')
+
+
     if evaluator.config['output_type'] == 'price_prediction':
         # get r^2 of percentage off
         residuals = []
@@ -62,6 +88,9 @@ def get_evaluations(tickers, evaluator_key, start_date, end_date):
     )
 
     return evals
+
+def get_all_evaluations(evaluator_key):
+    return evaluations.Evaluation.objects(evaluator_name=evaluator_key)
 
 def create_portfolio(date, size, evaluator_key, lookback):
 
@@ -111,25 +140,32 @@ def create_portfolio(date, size, evaluator_key, lookback):
 def plot_predictions(evaluator, tickers):
 
     for ticker in tickers:
-        price_range = price_adaptor.price_monthly_range(
-        ticker, 
-        evaluator.config['train_start'], 
-        evaluator.config['train_end']
-        )
-
-        range = dict()
-        for price in price_range:
-            range[price.date] = price.value
 
         predictions = dict()
         actual=dict()
+        residual_over_time = dict()
+        residuals = []
         for eval in get_evaluations([ticker], evaluator.key, evaluator.config['train_start'], evaluator.config['train_end']):
             current_date = time.get_months_ahead(eval.date, evaluator.config['holding_period'])
-            predictions[current_date] = eval.value * range[eval.date]
-            actual[current_date] = range[current_date]
+            training_node = training_data_adaptor.get_training_point(
+                evaluator.config['training_set_id'],
+                ticker,
+                current_date
+            )
+
+            if training_node is not None:
+                predictions[current_date] = eval.value
+                actual[current_date] = training_node.target
+                residual_over_time[current_date] = eval.value-training_node.target
+                residuals.append(eval.value-training_node.target)
 
         viz.plot_against({
             'predictions': pd.Series(predictions), 
             'actual': pd.Series(actual)
         }, title=f'{ticker}-Prices')
+
+        viz.plot_time_series(pd.Series(residual_over_time))
+
+        viz.hist(pd.Series(residuals), title='Residual Plot')
+
 

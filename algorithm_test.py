@@ -13,11 +13,11 @@ if __name__ == '__main__':
     manager.setup_connection()
 
 
-    algorithm_name = 'DecisionTreeReg-1'
-    tickers = ['aapl', 'tsla']
+    algorithm_name = 'RandomForestRegressor-1'
+    tickers = ['aapl']
     evaluator = evaluator_adaptor.get_evaluator(algorithm_name)
 
-    print(evaluation_adaptor.test_evaluations(evaluator))
+    evaluation_adaptor.test_evaluations(evaluator)
     evaluation_adaptor.plot_predictions(evaluator, tickers)
     
 
