@@ -8,6 +8,7 @@ class Portfolio(mongoengine.Document):
     trade_load = mongoengine.FloatField(required=True)
     trade_period = mongoengine.FloatField(required=True)
     lookback = mongoengine.FloatField(required=True)
+    short = mongoengine.BooleanField(required=True, default=False)
 
     trades = mongoengine.DictField(required=True)
     balances = mongoengine.DictField(required=True)
@@ -25,7 +26,8 @@ class Portfolio(mongoengine.Document):
                     'holding_period',
                     'trade_load',
                     'trade_period',
-                    'lookback'
+                    'lookback',
+                    'short'
                     ), 
                 'unique': True
             }

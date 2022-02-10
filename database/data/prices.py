@@ -14,7 +14,7 @@ class MonthlyPrice(mongoengine.Document):
         ]
     }
 
-class Price(mongoengine.Document):
+class DailyPrice(mongoengine.Document):
     # the closing price of a company on a given date
     ticker = mongoengine.StringField(required=True)
     date = mongoengine.StringField(required=True)
@@ -22,7 +22,7 @@ class Price(mongoengine.Document):
 
     meta = {
         'db_alias': 'core',
-        'collection': 'prices',
+        'collection': 'daily_prices',
         'indexes': [
             {'fields': ('ticker', 'date'), 'unique': True}
         ]

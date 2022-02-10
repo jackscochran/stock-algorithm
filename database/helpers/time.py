@@ -13,3 +13,9 @@ def get_months_ahead(date, months):
 
     return str(dtObj + relativedelta(months=months))[:date_length]
 
+def get_days_ahead(date, days):
+    date_format = '%Y-%m-%d'
+
+    dtobj = datetime.strptime(date, date_format)
+
+    return str(dtobj + relativedelta(days=days))[:10]

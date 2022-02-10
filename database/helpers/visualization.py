@@ -2,11 +2,27 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from pandas import plotting as pd_plt
 
-def plot_time_series(series):
+def scatter_plot(x,y, model=None, title=None):
+    plt.scatter(x,y)
+
+    if model:
+        plt.plot(x, model)
+
+    if title:
+        plt.title(title)
+
+    plt.show()
+
+def plot_time_series(series, title=None):
+    plt.axhline(y=0, c="grey", label="y=0")
     series.plot()
+    if title:
+        plt.title(title)
+        plt.axhline(y=0, c="black", label="y=0")
     plt.show()
 
 def plot_against(series_dict, legend_title=None, title=None):
+    plt.axhline(y=0, c="grey", label="y=0")
     for key in series_dict:
         plt.plot(series_dict[key], label=key)
     if legend_title:
@@ -15,7 +31,6 @@ def plot_against(series_dict, legend_title=None, title=None):
         plt.title(title)
 
     # plt.gca().set_ylim([0.5, 2])
-
     plt.show()
 
 def hist(series, title=None):

@@ -3,6 +3,7 @@ from ..helpers import mathematics as math_helper
 from ..helpers import time
 from ..adaptors import prices as price_adaptor
 from ..adaptors import evaluations as evaluation_adaptor
+from ..adaptors import companies as company_adaptor
 from .. import manager
 
 import statistics
@@ -22,6 +23,7 @@ def get_portfolio(config):
         trade_load= config['trade_load'],
         trade_period= config['trade_period'],
         lookback= config['lookback'],
+        short=config['short']
     )
 
     if portfolio is None:
@@ -33,7 +35,8 @@ def get_versions(config, uniform_figs):
     
     versions = portfolios.Portfolio.objects(
         start_date = config['start_date'],
-        end_date = config['end_date']
+        end_date = config['end_date'],
+        algorithm__contains = 'Reg'
     ).order_by(uniform_figs[0])
     filtered = dict()
 
@@ -43,7 +46,8 @@ def get_versions(config, uniform_figs):
             "holding_period": version.holding_period,
             "trade_load": version.trade_load,
             "trade_period": version.trade_period,
-            "lookback": version.lookback
+            "lookback": version.lookback,
+            "short": version.short
         }
 
         # check if version should be added 
@@ -70,7 +74,7 @@ def sp500_balances(start_date, end_date, period):
         if previous_date is None:
             balances[current_date] = 1
         else:
-            performance = price_adaptor.get_performance('spy', current_date, -period)
+            performance = price_adaptor.get_avg_performance('spy', current_date, -period)
             if performance is None:
                 performance = 1
             balances[current_date] = balances[previous_date] / performance
@@ -114,7 +118,7 @@ def load_portfolio(data, config):
     return portfolio
 
 def add_portfolio(config, trades):
-    csv_name = 'RandomForest-1'
+    csv_name = config['algorithm']
     balances = calculate_balances(trades, config, csv_name=csv_name)
     metrics = calculate_metrics(balances, calculate_returns(sp500_balances(config['start_date'],config['end_date'], config['trade_period'])))
 
@@ -130,27 +134,32 @@ def add_portfolio(config, trades):
         balances= balances,
         metrics = metrics
         )
+
+    if 'short' in config.keys():
+        portfolio.short = config['short']
+
     portfolio.save()
     return portfolio
 
 
 def get_trades(config):
-
+    
     trades = {}
     current_date = config['start_date']
-    while(current_date < config['end_date']):
-        trades[current_date] = evaluation_adaptor.create_portfolio(current_date, config['trade_load'], config['algorithm'], config['lookback'])
+    while(current_date <= config['end_date']):
+        trades[current_date] = evaluation_adaptor.create_portfolio(current_date, config['trade_load'], config['algorithm'], config['lookback'], config['short'])
         current_date = time.get_months_ahead(current_date, config['trade_period'])
 
     return trades
 
 def calculate_balances(trades, config, csv_name=None):
-    
     # initialize csv df
     if csv_name:
         df = {
             'date': [],
             'ticker': [],
+            'sector': [],
+            'industry': [],
             'balance': [],
             'previous_price':[],
             'return': [],
@@ -222,7 +231,16 @@ def calculate_balances(trades, config, csv_name=None):
         if csv_name:
             for i in range(portfolio_size):
                 asset = portfolio.get()
-                portfolio.put(asset)
+                portfolio.put(asset)    
+
+                company = company_adaptor.get_company(asset['ticker'])
+                if company is None:
+                    df['sector'].append(None)
+                    df['industry'].append(None)
+                else:
+                    df['sector'].append(company.profile['sector'])
+                    df['industry'].append(company.profile['industry'])
+
                 df['ticker'].append(asset['ticker'])
                 df['date'].append(current_date)
                 df['balance'].append(asset['balance'])
@@ -308,6 +326,15 @@ def calculate_balances(trades, config, csv_name=None):
             for i in range(portfolio_size):
                 asset = portfolio.get()
                 portfolio.put(asset)
+
+                company = company_adaptor.get_company(asset['ticker'])
+                if company is None:
+                    df['sector'].append(None)
+                    df['industry'].append(None)
+                else:
+                    df['sector'].append(company.profile['sector'])
+                    df['industry'].append(company.profile['industry'])
+
                 df['ticker'].append(asset['ticker'])
                 df['date'].append(current_date)
                 df['balance'].append(asset['balance'])
@@ -365,7 +392,7 @@ def calculate_metrics(balances, baseline):
     for date in balances:
 
         if date[:4] != previous_year: # check if month is end of year
-            if previous_year     is not None:
+            if previous_year is not None:
                 annual_returns.append(previous_periodic_price / previous_annual_balance - 1)
                 previous_annual_balance = previous_periodic_price
 
@@ -416,6 +443,11 @@ def calculate_metrics(balances, baseline):
     metrics['periodic_sortino'] = math_helper.divide(metrics['average_periodic_returns'], metrics['periodic_downside'])
     metrics['annual_sortino'] = math_helper.divide(metrics['average_annual_returns'], metrics['annual_downside'])
     metrics['mean_periodic_alpha'] = statistics.mean(list(periodic_alpha.values()))
+    metrics['CAGR'] = metrics['final_balance']**(1/len(annual_returns)) - 1
+    metrics['max_annual_downside'] = min(annual_returns)
+    metrics['max_periodic_downside'] = min(periodic_returns)
+    metrics['value_at_risk_95%'] = metrics['average_annual_returns'] - 1.65 * metrics['annual_stdev']
+    metrics['value_at_risk_99%'] = metrics['average_annual_returns'] - 2.33 * metrics['annual_stdev']
     
     return metrics
 
@@ -427,6 +459,7 @@ def update_metrics():
 
 def get_simulations(config):
     return portfolios.Portfolio.objects(
+        algorithm__startswith = 'RandomSelection',
         start_date= config['start_date'],
         end_date= config['end_date'],
         holding_period= config['holding_period'],
@@ -441,17 +474,17 @@ def get_random_trade_portfolios(n, config):
     current_date = config['start_date']
     while(current_date <= config['end_date']):
         print(f'Getting trades for {current_date}')
-        random_tickers = [price.ticker for price in price_adaptor.get_random_prices(current_date, n*load)]
-        random.shuffle(random_tickers)
+        tickers = [
+            eval.ticker for eval in evaluation_adaptor.get_evaluations(config['algorithm'], current_date, current_date)
+            ]
         
         for portfolio in trade_portfolios:
             portfolio[current_date] = []
-
-        for i in range(len(random_tickers)):
-            trade_portfolios[int(i/config['trade_load'])][current_date].append(random_tickers[i])
+            for ticker in random.choices(tickers, k=int(config['trade_load'])):
+                portfolio[current_date].append(ticker)
 
         # go to next time step
-        current_date = time.get_months_ahead(current_date, config['period'])
+        current_date = time.get_months_ahead(current_date, config['trade_period'])
 
     return trade_portfolios
 
@@ -459,13 +492,19 @@ def simulate(n, config):
     simulations = get_simulations(config)
     
     if len(simulations) < n:
-        for i in range(n-len(simulations)):
-            trades = get_random_trades()
-            add_portfolio(trades, config)
+        trade_portfolios = get_random_trade_portfolios(n-len(simulations), config)
+        
+        count = 0
+        for trades in trade_portfolios:
+            count+=1
+            print(f'Saving Portfolios {len(simulations) + count} / {n}')
+
+            config['algorithm'] = f'RandomSelection-{len(simulations) + count}'
+            add_portfolio(config, trades)
 
     return get_simulations(config)
 
-def simulation_statistics(portfolio):
+def simulation_statistics(portfolio, n):
 
     # initalize simulation dict
     simulated_metrics = dict()
@@ -474,6 +513,18 @@ def simulation_statistics(portfolio):
         simulated_metrics[metric] = []
         probablities[metric] = 0
 
+    # get simulations
+    simulations = simulate(
+        n,
+        {
+        "algorithm": portfolio.algorithm,
+        "start_date": portfolio.start_date,
+        "end_date": portfolio.end_date,
+        "holding_period": portfolio.holding_period,
+        "trade_load": portfolio.trade_load,
+        "trade_period": portfolio.trade_period,  
+        "lookback": portfolio.lookback
+    })
 
     # save metrics for each simulation
     for simulation in simulations:
@@ -506,3 +557,15 @@ def simulation_statistics(portfolio):
         stats[metric]['significance'] = math_helper.divide(probablities[metric], len(simulations))
 
     return stats
+
+def get_simulation_returns(config):
+
+    returns = {}
+    for simulation in get_simulations(config):
+        simulation_returns = calculate_returns(simulation.balances)
+        for date in simulation_returns:
+            if date not in returns.keys():
+                returns[date] = []
+            returns[date].append(simulation_returns[date])
+
+    return returns

@@ -1,7 +1,8 @@
 import numpy as np
 from sklearn.linear_model import LinearRegression
 
-NAME = 'LinReg'
+NAME = 'LinearRegressor'
+RANDOM_GRID = None
 
 def train(X, y):
 
@@ -15,3 +16,5 @@ def evaluate(model, X):
 
     return max(0, prediction) # price cant fall below 0
  
+def feature_analysis(model, features):
+    return

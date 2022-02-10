@@ -1,7 +1,7 @@
 import requests
 from ..data import fmp_cache
 
-API_KEY = ''
+API_KEY = '0ec64f4fc40a9b7b82734deabf6f8221'
 
 def get_response(url):
 
