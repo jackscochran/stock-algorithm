@@ -5,6 +5,7 @@ from database.adaptors import training_data as training_data_adaptor
 from database.adaptors import fmp_cache as fmp_adaptor
 from database.data.training_data import TrainingPoint
 from helpers import time
+from database.helpers import mathematics as math_helper
 from database import manager
 
 import math
@@ -12,8 +13,8 @@ import statistics
 
 import pandas as pd
 
-SET_ID = 2
-PREDICTION_TYPE = 'stock_sharpe'
+SET_ID = 1
+PREDICTION_TYPE = 'relative_return'
 config = {
     'prediction_period': 3,
     'baseline': 'spy'
@@ -24,7 +25,7 @@ config = {
 def extract_from_api():
     tickers = company_adaptor.get_all_tickers()
     count = 0
-    threshold = 508
+    threshold = 0   
     for ticker in tickers:
 
         # Log Process
@@ -39,7 +40,8 @@ def extract_from_api():
             'income_statements': f'v3/income-statement-growth/{ticker.upper()}?period=quarter',
             'balance_sheets': f'v3/balance-sheet-statement-growth/{ticker.upper()}?period=quarter',
             'cashflow_statements': f'v3/cash-flow-statement-growth/{ticker.upper()}?period=quarter',
-            'key_metrics': f'v3/key-metrics/{ticker.upper()}?period=quarter',
+            # 'financial_ratios': f'v3/ratios/{ticker.upper()}?period=quarter',
+            'key_metrics': f'v3/key-metrics/{ticker.upper()}?period=quarter'
         }
 
         # Collect historcial data
@@ -57,19 +59,19 @@ def extract_from_api():
             
             # all quarterly statements must be filed within 45 days at the end of the quarter
             try:
-                date = time.get_days_ahead(data_sources['income_statements'][i]['date'][:10], 45)
+                date = time.get_days_ahead(data_sources['key_metrics'][i]['date'][:10], 45)
             except:
                 continue
             # Get Variables for target
-            # current_target = price_adaptor.get_alpha(ticker, date, config['prediction_period'], config['baseline'])
-            # previous_target = price_adaptor.get_alpha(ticker, time.get_months_ahead(date, -config['prediction_period']), config['prediction_period'], config['baseline'])
+            current_target = price_adaptor.get_alpha(ticker, date, config['prediction_period'], config['baseline'])
+            previous_target = price_adaptor.get_alpha(ticker, time.get_months_ahead(date, -config['prediction_period']), config['prediction_period'], config['baseline'])
             
-            current_target = price_adaptor.get_stock_sharpe_of_alpha(ticker, config['baseline'], date, config['prediction_period'], 7)
-            previous_target = price_adaptor.get_stock_sharpe_of_alpha(ticker, config['baseline'], time.get_months_ahead(date, -config['prediction_period']), config['prediction_period'], 7)
+            # current_target = price_adaptor.get_stock_sharpe_of_alpha(ticker, config['baseline'], date, config['prediction_period'], 7)
+            # previous_target = price_adaptor.get_stock_sharpe_of_alpha(ticker, config['baseline'], time.get_months_ahead(date, -config['prediction_period']), config['prediction_period'], 7)
 
             try:
                 features = {
-                    'pe': data_sources['key_metrics'][i]['peRatio'] - data_sources['key_metrics'][i+1]['peRatio'],
+                    'pe': math_helper.divide((data_sources['key_metrics'][i]['peRatio'] - data_sources['key_metrics'][i+1]['peRatio']), data_sources['key_metrics'][i+1]['peRatio']),
                     'assets': data_sources['balance_sheets'][i]['growthTotalAssets'],
                     'current_assets': data_sources['balance_sheets'][i]['growthTotalCurrentAssets'],
                     'liabilities': data_sources['balance_sheets'][i]['growthTotalLiabilities'],
@@ -81,16 +83,16 @@ def extract_from_api():
                     'cash_from_inv': -data_sources['cashflow_statements'][i]['growthNetCashUsedForInvestingActivites'],
                     'cash_from_fin': data_sources['cashflow_statements'][i]['growthNetCashUsedProvidedByFinancingActivities'],
                     'cash': data_sources['balance_sheets'][i]['growthCashAndCashEquivalents'],
-                    'capex_per_share': data_sources['key_metrics'][i]['capexPerShare'] - data_sources['key_metrics'][i+1]['capexPerShare'],
-                    'pb': data_sources['key_metrics'][i]['pbRatio'] - data_sources['key_metrics'][i+1]['pbRatio'],
-                    'cash_per_share': data_sources['key_metrics'][i]['cashPerShare'] - data_sources['key_metrics'][i+1]['cashPerShare'],
-                    'current_ratio': data_sources['key_metrics'][i]['currentRatio'] - data_sources['key_metrics'][i+1]['currentRatio'],
+                    'capex_per_share': math_helper.divide((data_sources['key_metrics'][i]['capexPerShare'] - data_sources['key_metrics'][i+1]['capexPerShare']), data_sources['key_metrics'][i+1]['capexPerShare']),
+                    'pb': math_helper.divide((data_sources['key_metrics'][i]['pbRatio'] - data_sources['key_metrics'][i+1]['pbRatio']), data_sources['key_metrics'][i+1]['pbRatio']),
+                    'cash_per_share': math_helper.divide((data_sources['key_metrics'][i]['cashPerShare'] - data_sources['key_metrics'][i+1]['cashPerShare']), data_sources['key_metrics'][i+1]['cashPerShare']),
+                    'current_ratio': math_helper.divide((data_sources['key_metrics'][i]['currentRatio'] - data_sources['key_metrics'][i+1]['currentRatio']), data_sources['key_metrics'][i+1]['currentRatio']),
                     'net_margin': data_sources['income_statements'][i]['growthGrossProfitRatio'],
-                    'roa': data_sources['key_metrics'][i]['returnOnTangibleAssets'] - data_sources['key_metrics'][i+1]['returnOnTangibleAssets'],
+                    'roa': math_helper.divide((data_sources['key_metrics'][i]['returnOnTangibleAssets'] - data_sources['key_metrics'][i+1]['returnOnTangibleAssets']), data_sources['key_metrics'][i+1]['returnOnTangibleAssets']),
                     'eps': data_sources['income_statements'][i]['growthEPS'],
                     'previous_target': previous_target
                 }
-            except TypeError:
+            except (TypeError, IndexError) as e:
                 continue
             
             # Check if data is clean (look for null values)

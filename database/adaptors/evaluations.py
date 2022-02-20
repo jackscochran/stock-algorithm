@@ -18,7 +18,7 @@ import pandas as pd
 
 def test_evaluations(evaluator):
     
-    if evaluator.config['output_type'] == 'relative_return':
+    if evaluator.config['output_type'] == 'relative_return' or evaluator.config['output_type'] == 'stock_sharpe':
         evals = list(get_top_evaluations(evaluator.key))
 
         # correlation testing
@@ -159,6 +159,7 @@ def add_evaluation(ticker, type, evaluator_name, date, value):
     evaluation.save()
 
 def delete_evaluations(evaluator_key):
+    input("Are you sure you want to delete?")
     for evaluation in get_all_evaluations(evaluator_key):
         evaluation.delete()
 

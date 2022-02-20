@@ -11,18 +11,18 @@ if __name__ == '__main__':
     manager.setup_connection()
     # load algorithm configurations #
     config = {
-        "algorithm": "RandomForestRegressor-2",
+        "algorithm": "AlgoCLinReg-14",
         "start_date": "1996-08",
-        "end_date": "2021-08",
+        "end_date": "2021-11",
         "holding_period": 3,
-        "trade_load": 100,
+        "trade_load": 50,
         "trade_period": 3,  
         "lookback": 0,
         "short": False
     }
 
     # get portfolio data #
-    adjustments = ['RandomForestRegressor-1', 'RandomForestRegressor-2', 'AlgoCLinReg-1', 'AlgoCLinReg-2']
+    adjustments = ['RandomForestRegressor-14', 'RandomForestRegressor-15', 'RandomForestRegressor-16', 'RandomForestRegressor-17','AlgoCLinReg-14', 'AlgoCLinReg-15', 'AlgoCLinReg-17']
     for adjustment in adjustments:
         print(f'\n----------------  RUN {adjustment} ----------------')
         # adjust desired config 

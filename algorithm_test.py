@@ -15,7 +15,7 @@ if __name__ == '__main__':
     manager.setup_connection()
 
 
-    algorithm_name = 'AlgoCLinReg-8'
+    algorithm_name = 'RandomForestRegressor-14'
     tickers = ['aa']
     evaluator = evaluator_adaptor.get_evaluator(algorithm_name)
 

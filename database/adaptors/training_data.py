@@ -2,6 +2,7 @@ from ..data import training_data
 from ..adaptors import companies as company_adaptor
 
 import random
+import math
 
 import numpy as np
 
@@ -97,5 +98,6 @@ def get_target_type(id):
 
 def delete_training_set(id):
     # get_training_set(id).delete()
+    input('Are you sure you want to delete')
     for training_point in get_training_points(id):
         training_point.delete()

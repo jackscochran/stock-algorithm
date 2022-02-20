@@ -17,6 +17,7 @@ from algorithms.predictors import mlpRegressor
 from algorithms.predictors import algoC
 from algorithms.predictors import algoC_LinearReg
 from algorithms.feature_extractors import randomForest as rf_extractor
+from algorithms.feature_extractors import pca as pca_extractor
 from helpers import time
 
 import numpy as np
@@ -32,11 +33,11 @@ if __name__=="__main__":
 # -------------- load algorithm configurations -------------- #
 
     config = {
-        "version": 9,
-        "change_log": 'Consumer Defensive',
+        "version": 17,
+        "change_log": 'Used training set 3',
         "train_start": "1995-05",
-        "train_end": "2021-08",
-        "training_set_id": 2, 
+        "train_end": "2022-02",
+        "training_set_id": 3, 
         "training_timestep": 3,
         "training_lookback": 60,
         "string_filter": {
@@ -45,7 +46,7 @@ if __name__=="__main__":
             "industry": [],
             "exchangeShortName": [],
             "ceo": [],
-            "sector": ['Consumer Defensive'],
+            "sector": [],
             "country": ["US"],
         },
         "float_filter": {
@@ -76,13 +77,12 @@ if __name__=="__main__":
     if evaluator is None:
         evaluator = evaluator_adaptor.add_evaluator(config)
 
-    # evaluation_adaptor.delete_evaluations(evaluator_adaptor.get_key(config))
+    evaluation_adaptor.delete_evaluations(evaluator_adaptor.get_key(config))
 
 # ---------------------- Iterate start-end, training and predicting stocks each month ---------------------- #
 
 
     print('----------- Getting Data')
-    # evaluator.config['train_start'] = '2010-08'
     training_start = time.get_months_ahead(evaluator.config['train_start'], -evaluator.config['training_lookback'])
     training_stop = time.get_months_ahead(evaluator.config['train_start'], -evaluator.config['holding_period'])
     
@@ -132,6 +132,7 @@ if __name__=="__main__":
 
         train_means = [X[:,i].mean() for i in range(X.shape[1])]
         train_stds = [X[:,i].std() for i in range(X.shape[1])]
+        
         X = np.array(math_helper.normalize_features(X, train_means, train_stds))
 
         # get data for next time step predictions
