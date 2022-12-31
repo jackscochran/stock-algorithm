@@ -8,7 +8,17 @@ This script extracts financial data for various companies from the API provided 
 
 ## algorithm_dev
 
-This script is responsible for defining and training machine learning models for stock prediction. The script loads training data from the database, cleans and normalizes the training data, and then trains a model using that data. The script currently supports several different prediction algorithms and feature extraction techniques, which can be selected by modifying the algorithm and extractor variables at the beginning of the script.
+This script is responsible for defining and training machine learning models for stock prediction. The script loads training data from the database, cleans and normalizes the training data, and then trains a model using that data. The script currently supports several different prediction algorithms and feature extraction techniques.
+
+Prediction Algorithms:
+ - Multi-layer Perceptron Regressor
+ - Random Forest
+ - Linear Regression
+ - Decision Tree
+
+Feature Extraction:
+ - PCA
+ - Random Forest
 
 ## algorithm_test
 
