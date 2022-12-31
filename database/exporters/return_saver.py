@@ -1,5 +1,5 @@
-from database import manager
-from database.adaptors import portfolios as portfolio_adaptor
+import manager
+from adaptors import portfolios as portfolio_adaptor
 
 import pandas as pd
 
